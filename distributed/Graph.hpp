@@ -24,7 +24,7 @@ private:
     list<uint64_t> id_list;
     list<list<uint64_t>> graph;
 public:
-    Graph();
+    
     int add_node(uint64_t node_id);
     int add_edge(uint64_t node_a_id,uint64_t node_b_id);
     int remove_node(uint64_t node_id);

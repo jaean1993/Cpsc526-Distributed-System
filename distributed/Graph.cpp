@@ -42,8 +42,8 @@ int Graph::add_edge(uint64_t node_a_id, uint64_t node_b_id){
     advance(list_b, position_b);
     
     //check specified nodes in list
-    bool found_a = (std::find(*list_a -> begin(), *list_a -> end(), node_b_id) != *list_a -> end());
-    bool found_b = (std::find(*list_b -> begin(), *list_b -> end(), node_a_id) != *list_b -> end());
+    bool found_a = (std::find(list_a -> begin(), list_a->end(), node_b_id) != list_a -> end());
+    bool found_b = (std::find(list_b -> begin(), list_b -> end(), node_a_id) != list_b -> end());
     
     if (found_a && found_b) {
         return 2; //the edge already exists
@@ -120,8 +120,8 @@ int Graph::get_edge(uint64_t node_a_id, uint64_t node_b_id) {
     list<list<uint64_t>>::iterator list_b = graph.begin();
     advance(list_b, position_b);
     
-    bool found_a = (std::find(*list_a -> begin(), *list_a -> end(), node_b_id) != *list_a -> end());
-    bool found_b = (std::find(*list_b -> begin(), *list_b -> end(), node_a_id) != *list_b -> end());
+    bool found_a = (std::find(list_a -> begin(), list_a -> end(), node_b_id) != list_a -> end());
+    bool found_b = (std::find(list_b -> begin(), list_b -> end(), node_a_id) != list_b -> end());
     
     if (found_a && found_b) {
         return 1; //the edge already exists

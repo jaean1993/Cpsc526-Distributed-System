@@ -9,36 +9,33 @@
 #include "mongoose.h"  // Include Mongoose API definitions
 #include "Graph.hpp"
 
-// Define an event handler function
-static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
-    struct mbuf *io = &nc->recv_mbuf;
-    
-    switch (ev) {
-        case MG_EV_RECV:
-            // This event handler implements simple TCP echo server
-            mg_send(nc, io->buf, io->len);  // Echo received data back
-            mbuf_remove(io, io->len);      // Discard data from recv buffer
-            break;
-        default:
-            break;
+static const char *s_http_port = "8000";
+
+static void ev_handler(struct mg_connection *c, int ev, void *p) {
+    if (ev == MG_EV_HTTP_REQUEST) {
+        struct http_message *hm = (struct http_message *) p;
+
+        // We have received an HTTP request. Parsed request is contained in `hm`.
+        // Send HTTP reply to the client which shows full original request.
+        Graph graph;
+//        graph.add_node(1);
+        mg_send_head(c, 200, hm->message.len, "Content-Type: text/plain");
+        mg_printf(c, "%.*s", hm->message.len, hm->message.p);
     }
 }
 
 int main(void) {
     struct mg_mgr mgr;
+    struct mg_connection *c;
     
-    Graph graph;
+    mg_mgr_init(&mgr, NULL);
+    c = mg_bind(&mgr, s_http_port, ev_handler);
+    mg_set_protocol_http_websocket(c);
     
-    mg_mgr_init(&mgr, NULL);  // Initialize event manager object
-    
-    // Note that many connections can be added to a single event manager
-    // Connections can be created at any point, e.g. in event handler function
-    mg_bind(&mgr, "1234", ev_handler);  // Create listening connection and add it to the event manager
-    
-    for (;;) {  // Start infinite event loop
+    for (;;) {
         mg_mgr_poll(&mgr, 1000);
     }
-    
     mg_mgr_free(&mgr);
+    
     return 0;
 }
