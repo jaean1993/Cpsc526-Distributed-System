@@ -19,11 +19,9 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
     if (ev == MG_EV_HTTP_REQUEST) {
 
         struct http_message *hm = (struct http_message *) p;
-        const char *s = hm->uri.p;
-        std::string string_test(s);
         
-        //uri path
-        if (string_test.substr(0,hm->uri.len).compare("/api/v1/add_node") == 0) {
+        //method && uri path
+        if (strcmp(hm->method.p, "POST") && strcmp(hm->uri.p, "/api/v1/add_node") == 0) {
             
             int result = graph.add_node(get_arg(hm->body,"node_id"));
             if(result) {
