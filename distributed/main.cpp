@@ -8,19 +8,31 @@
 
 #include "mongoose.h"  // Include Mongoose API definitions
 #include "Graph.hpp"
+#include <string>
 
 static const char *s_http_port = "8000";
-
+static Graph graph;
+static uint64_t get_arg(string arg_name) {
+    
+}
 static void ev_handler(struct mg_connection *c, int ev, void *p) {
     if (ev == MG_EV_HTTP_REQUEST) {
-        struct http_message *hm = (struct http_message *) p;
 
-        // We have received an HTTP request. Parsed request is contained in `hm`.
-        // Send HTTP reply to the client which shows full original request.
-        Graph graph;
-//        graph.add_node(1);
-        mg_send_head(c, 200, hm->message.len, "Content-Type: text/plain");
-        mg_printf(c, "%.*s", hm->message.len, hm->message.p);
+        struct http_message *hm = (struct http_message *) p;
+        char string_test[hm->uri.len];
+        
+        strncpy(string_test, hm->uri.p, hm->uri.len);
+        
+        if (strcmp(string_test, "/api/v1/add_node") == 0) {
+            
+            int result = graph.add_node(get_arg("node_id"));
+            
+            mg_send_head(c, 200, hm->message.len, "Content-Type: text/plain");
+            mg_printf(c, "%.*s", hm->message.len, hm->message.p);
+        }else if (strcmp(string_test, "/api/v1/remove_node") == 0) {
+            int result = graph.remove_node(get_arg("node_id"));
+        }
+        
     }
 }
 
@@ -39,3 +51,4 @@ int main(void) {
     
     return 0;
 }
+
