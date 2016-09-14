@@ -12,25 +12,29 @@
 
 static const char *s_http_port = "8000";
 static Graph graph;
-static uint64_t get_arg(string arg_name) {
-    
+static uint64_t get_arg(struct mg_str body,string arg_name) {
+    return 0;
 }
 static void ev_handler(struct mg_connection *c, int ev, void *p) {
     if (ev == MG_EV_HTTP_REQUEST) {
 
         struct http_message *hm = (struct http_message *) p;
-        char string_test[hm->uri.len];
+        const char *s = hm->uri.p;
+        std::string string_test(s);
         
-        strncpy(string_test, hm->uri.p, hm->uri.len);
-        
-        if (strcmp(string_test, "/api/v1/add_node") == 0) {
+        //uri path
+        if (string_test.substr(0,hm->uri.len).compare("/api/v1/add_node") == 0) {
             
-            int result = graph.add_node(get_arg("node_id"));
-            
-            mg_send_head(c, 200, hm->message.len, "Content-Type: text/plain");
+            int result = graph.add_node(get_arg(hm->body,"node_id"));
+            if(result) {
+                mg_send_head(c, 200, hm->message.len, "Content-Type: application/json");
+            }else {
+               mg_send_head(c, 400, hm->message.len, "Content-Type: application/json");
+            }
             mg_printf(c, "%.*s", hm->message.len, hm->message.p);
-        }else if (strcmp(string_test, "/api/v1/remove_node") == 0) {
-            int result = graph.remove_node(get_arg("node_id"));
+            
+        }else if (string_test.substr(0,hm->uri.len).compare("/api/v1/remove_node") == 0) {
+            int result = graph.remove_node(get_arg(hm->body,"node_id"));
         }
         
     }
