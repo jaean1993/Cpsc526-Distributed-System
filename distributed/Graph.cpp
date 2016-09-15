@@ -11,7 +11,10 @@
 #include <list>
 #include <vector>
 #include <algorithm>
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <queue>
+#include<stack>
 
 using namespace std;
 
@@ -143,6 +146,56 @@ list<uint64_t> Graph::get_neighbors(uint64_t node_id) {
         result.push_back(*it);
     }
     
+    return result;
+}
+
+list<uint64_t> Graph::shortest_path(uint64_t node_a_id,uint64_t node_b_id) {
+    
+    uint64_t position_a = *find(id_list.begin(), id_list.end(), node_a_id);
+    uint64_t position_b = *find(id_list.begin(), id_list.end(), node_b_id);
+    
+    bool* mark = (bool*)malloc(id_list.size() * sizeof(bool));
+    uint64_t* edge_node = (uint64_t*)malloc(id_list.size() * sizeof(uint64_t));
+    queue<uint64_t> q;
+    mark[position_a] = true;
+    q.push(node_a_id);
+    
+    bool found = false;
+    
+    while (q.size() != 0 && !found) {
+        uint64_t position = q.front();
+        q.pop();
+        list<list<uint64_t>>::iterator list = graph.begin();
+        advance(list, position);
+        for (std::list<uint64_t>::iterator it = list->begin(); it != list->end(); it++) {
+            uint64_t position_new = *find(id_list.begin(), id_list.end(), *it);
+            if (!mark[position_new]) {
+                edge_node[position] = position_new;
+                mark[position_new] = true;
+                q.push(position_new);
+            }
+            if(mark[position_b]) {
+                found = true;
+                break;
+            }
+        }
+    }
+    
+    list<uint64_t> result;
+    stack<uint64_t> stack_temp;
+    
+    for (uint64_t start = position_b; start != position_a; start = edge_node[start]) {
+        stack_temp.push(start);
+    }
+    while (stack_temp.size()) {
+        list<uint64_t>::iterator list = id_list.begin();
+        advance(list, stack_temp.top());
+        result.push_back(*list);
+        stack_temp.pop();
+    }
+    
+    free(mark);
+    free(edge_node);
     return result;
 }
 

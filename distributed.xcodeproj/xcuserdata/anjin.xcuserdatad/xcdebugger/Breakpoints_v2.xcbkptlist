@@ -72,22 +72,6 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "distributed/main.cpp"
-            timestampString = "495560633.437289"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "27"
-            endingLineNumber = "27"
-            landmarkName = "ev_handler(struct mg_connection *c, int ev, void *p)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "distributed/main.cpp"
             timestampString = "495561027.402063"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"

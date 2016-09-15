@@ -21,20 +21,21 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
         struct http_message *hm = (struct http_message *) p;
         
         //method && uri path
-        if (strcmp(hm->method.p, "POST") && strcmp(hm->uri.p, "/api/v1/add_node") == 0) {
-            
-            int result = graph.add_node(get_arg(hm->body,"node_id"));
-            if(result) {
-                mg_send_head(c, 200, hm->message.len, "Content-Type: application/json");
-            }else {
-               mg_send_head(c, 400, hm->message.len, "Content-Type: application/json");
+        if (strcmp(hm->method.p, "POST")) {
+            if(strcmp(hm->uri.p, "/api/v1/add_node") == 0) {
+                
+                int result = graph.add_node(get_arg(hm->body,"node_id"));
+                if(result) {
+                    mg_send_head(c, 200, hm->message.len, "Content-Type: application/json");
+                }else {
+                    mg_send_head(c, 400, hm->message.len, "Content-Type: application/json");
+                }
+                mg_printf(c, "%.*s", hm->message.len, hm->message.p);
+                
+            }else if (strcmp(hm->uri.p, "/api/v1/remove_node") == 0) {
+                int result = graph.remove_node(get_arg(hm->body,"node_id"));
             }
-            mg_printf(c, "%.*s", hm->message.len, hm->message.p);
-            
-        }else if (string_test.substr(0,hm->uri.len).compare("/api/v1/remove_node") == 0) {
-            int result = graph.remove_node(get_arg(hm->body,"node_id"));
         }
-        
     }
 }
 
