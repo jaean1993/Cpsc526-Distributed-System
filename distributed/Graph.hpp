@@ -21,6 +21,7 @@ class Graph
 private:
     int vertex;
     int edge;
+    static int size;
     vector<uint64_t> id_list;
     vector<vector<uint64_t>> graph;
 public:

@@ -22,6 +22,8 @@ int Graph::add_node(uint64_t node_id){
     
     if (!get_node(node_id)) {
         id_list.push_back(node_id);
+        graph[size] = *new vector<uint64_t>;
+        size++;
         return 1;//success
     }else{
         return 0;//node already exists
