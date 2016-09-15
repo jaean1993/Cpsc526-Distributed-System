@@ -12,31 +12,35 @@
 
 static const char *s_http_port = "8000";
 static Graph graph;
-static uint64_t get_arg(struct mg_str body,string arg_name) {
-    return 0;
-}
-static void ev_handler(struct mg_connection *c, int ev, void *p) {
-    if (ev == MG_EV_HTTP_REQUEST) {
 
-        struct http_message *hm = (struct http_message *) p;
-        const char *s = hm->uri.p;
-        std::string string_test(s);
-        
-        //uri path
-        if (string_test.substr(0,hm->uri.len).compare("/api/v1/add_node") == 0) {
-            
-            int result = graph.add_node(get_arg(hm->body,"node_id"));
-            if(result) {
+static void ev_handler(struct mg_connection* c, int ev, void *p) {
+    if ( ev == MG_EV_HTTP_REQUEST ) {
+        struct http_message* hm = (struct http_message*) p;
+        if ( strcmp(hm->method.p, "POST") == 0 && strcmp(hm->uri.p, "/api/v1/add_node") == 0) {
+        	mg_rpc_create_reply(char *buf, int len, const struct mg_rpc_request *req);
+
+            if ( ) {
                 mg_send_head(c, 200, hm->message.len, "Content-Type: application/json");
-            }else {
+            }
+            else {
                mg_send_head(c, 400, hm->message.len, "Content-Type: application/json");
             }
             mg_printf(c, "%.*s", hm->message.len, hm->message.p);
-            
-        }else if (string_test.substr(0,hm->uri.len).compare("/api/v1/remove_node") == 0) {
-            int result = graph.remove_node(get_arg(hm->body,"node_id"));
+        } else if (strcmp(hm->method.p, "POST") == 0 && strcmp(hm->uri.p, "/api/v1/remove_node") == 0) {
+//            int result = graph.remove_node(get_arg(hm->body,"node_id"));
+        } else if (strcmp(hm->method.p, "POST") == 0 && strcmp(hm->uri.p, "/api/v1/add_edge") == 0) {
+//            int result = graph.remove_node(get_arg(hm->body,"node_id"));
+        } else if (strcmp(hm->method.p, "POST") == 0 && strcmp(hm->uri.p, "/api/v1/remove_edge") == 0) {
+//            int result = graph.remove_node(get_arg(hm->body,"node_id"));
+        } else if (strcmp(hm->method.p, "POST") == 0 && strcmp(hm->uri.p, "/api/v1/get_node") == 0) {
+//            int result = graph.remove_node(get_arg(hm->body,"node_id"));
+        } else if (strcmp(hm->method.p, "POST") == 0 && strcmp(hm->uri.p, "/api/v1/get_edge") == 0) {
+//            int result = graph.remove_node(get_arg(hm->body,"node_id"));
+        } else if (strcmp(hm->method.p, "POST") == 0 && strcmp(hm->uri.p, "/api/v1/get_neighbors") == 0) {
+//            int result = graph.remove_node(get_arg(hm->body,"node_id"));
+        } else if (strcmp(hm->method.p, "POST") == 0 && strcmp(hm->uri.p, "/api/v1/shortest_path") == 0) {
+//            int result = graph.remove_node(get_arg(hm->body,"node_id"));
         }
-        
     }
 }
 
