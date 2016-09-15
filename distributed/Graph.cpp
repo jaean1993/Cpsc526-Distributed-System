@@ -31,32 +31,30 @@ int Graph::add_node(uint64_t node_id){
 int Graph::add_edge(uint64_t node_a_id, uint64_t node_b_id){
 
     //get position from id_list
-    uint64_t position_a = *find(id_list.begin(), id_list.end(), node_a_id);
-    uint64_t position_b = *find(id_list.begin(), id_list.end(), node_b_id);
+    int position_a = *find(id_list.begin(), id_list.end(), node_a_id);
+    int position_b = *find(id_list.begin(), id_list.end(), node_b_id);
     
     if (position_a == graph.size() || position_b == graph.size() || position_a == position_b) {
         return 0;   //if either node doesn't exist, or if node_a_id is the same as node_b_id
     }
     
     // get list according to id
-    list<list<uint64_t>>::iterator list_a = graph.begin();
-    advance(list_a, position_a);
-    list<list<uint64_t>>::iterator list_b = graph.begin();
-    advance(list_b, position_b);
+    vector<uint64_t> list_a = graph[position_a];
+    vector<uint64_t> list_b = graph[position_b];
     
     //check specified nodes in list
-    bool found_a = (std::find(list_a -> begin(), list_a->end(), node_b_id) != list_a -> end());
-    bool found_b = (std::find(list_b -> begin(), list_b -> end(), node_a_id) != list_b -> end());
+    bool found_a = (std::find(list_a.begin(), list_a.end(), node_b_id) != list_a.end());
+    bool found_b = (std::find(list_b.begin(), list_b.end(), node_a_id) != list_b.end());
     
     if (found_a && found_b) {
         return 2; //the edge already exists
     }
     
     if (!found_a) {
-        list_a->push_back(node_b_id);
+        list_a.push_back(node_b_id);
     }
     if (!found_b) {
-        list_b->push_back(node_a_id);
+        list_b.push_back(node_a_id);
     }
     
     return 1;//success
@@ -68,15 +66,14 @@ int Graph::remove_node(uint64_t node_id) {
     if (!get_node(node_id)) {
         return 0;//node does not exist
     }else {
-        list<uint64_t>::iterator position = find(id_list.begin(), id_list.end(), node_id);
-        list<list<uint64_t>>::iterator list = graph.begin();
-        advance(list, *position);
+        vector<uint64_t>::iterator position = find(id_list.begin(), id_list.end(), node_id);
+        vector<uint64_t> list = graph[*position];
         
-        for (std::list<uint64_t>::iterator it = list->begin(); it != list->end(); it++) {
+        for (vector<uint64_t>::iterator it = list.begin(); it != list.end(); it++) {
             remove_single_edge(*it, node_id);
         }//erase node'edge in other nodes
         
-        graph.erase(list);//erase node's own list
+        graph.erase(graph.begin()+ *position - 1);//erase node's own list
         
         id_list.erase(position); //erase node in id_list
         
@@ -96,9 +93,8 @@ int Graph::remove_edge(uint64_t node_a_id, uint64_t node_b_id) {
 
 void Graph::remove_single_edge(uint64_t node_a_id, uint64_t node_b_id) {
     uint64_t position_a = *find(id_list.begin(), id_list.end(), node_a_id);
-    list<list<uint64_t>>::iterator list_a = graph.begin();
-    advance(list_a, position_a);
-    list_a->erase(find(id_list.begin(), id_list.end(), node_b_id));
+    vector<uint64_t> list_a = graph[position_a];
+    list_a.erase(find(id_list.begin(), id_list.end(), node_b_id));
     
 }
 
@@ -118,13 +114,11 @@ int Graph::get_edge(uint64_t node_a_id, uint64_t node_b_id) {
         return 0;//if either node doesn't exist, or if node_a_id is the same as node_b_id
     }
     
-    list<list<uint64_t>>::iterator list_a = graph.begin();
-    advance(list_a, position_a);
-    list<list<uint64_t>>::iterator list_b = graph.begin();
-    advance(list_b, position_b);
+    vector<uint64_t> list_a = graph[position_a];
+    vector<uint64_t> list_b = graph[position_b];
     
-    bool found_a = (std::find(list_a -> begin(), list_a -> end(), node_b_id) != list_a -> end());
-    bool found_b = (std::find(list_b -> begin(), list_b -> end(), node_a_id) != list_b -> end());
+    bool found_a = (std::find(list_a.begin(), list_a.end(), node_b_id) != list_a.end());
+    bool found_b = (std::find(list_b.begin(), list_b.end(), node_a_id) != list_b.end());
     
     if (found_a && found_b) {
         return 1; //the edge already exists
@@ -132,24 +126,23 @@ int Graph::get_edge(uint64_t node_a_id, uint64_t node_b_id) {
     return 0;
 }
 
-list<uint64_t> Graph::get_neighbors(uint64_t node_id) {
-    list<uint64_t> result;
+vector<uint64_t> Graph::get_neighbors(uint64_t node_id) {
+    vector<uint64_t> result;
     if (!get_node(node_id)) {
         return result;
     }
     
-    list<uint64_t>::iterator position = find(id_list.begin(), id_list.end(), node_id);
-    list<list<uint64_t>>::iterator list = graph.begin();
-    advance(list, *position);
+    vector<uint64_t>::iterator position = find(id_list.begin(), id_list.end(), node_id);
+    vector<uint64_t> list = graph[*position];
     
-    for (std::list<uint64_t>::iterator it = list->begin(); it != list->end(); it++) {
+    for (vector<uint64_t>::iterator it = list.begin(); it != list.end(); it++) {
         result.push_back(*it);
     }
     
     return result;
 }
 
-list<uint64_t> Graph::shortest_path(uint64_t node_a_id,uint64_t node_b_id) {
+vector<uint64_t> Graph::shortest_path(uint64_t node_a_id,uint64_t node_b_id) {
     
     uint64_t position_a = *find(id_list.begin(), id_list.end(), node_a_id);
     uint64_t position_b = *find(id_list.begin(), id_list.end(), node_b_id);
@@ -165,9 +158,8 @@ list<uint64_t> Graph::shortest_path(uint64_t node_a_id,uint64_t node_b_id) {
     while (q.size() != 0 && !found) {
         uint64_t position = q.front();
         q.pop();
-        list<list<uint64_t>>::iterator list = graph.begin();
-        advance(list, position);
-        for (std::list<uint64_t>::iterator it = list->begin(); it != list->end(); it++) {
+        vector<uint64_t> list = graph[position];
+        for (vector<uint64_t>::iterator it = list.begin(); it != list.end(); it++) {
             uint64_t position_new = *find(id_list.begin(), id_list.end(), *it);
             if (!mark[position_new]) {
                 edge_node[position] = position_new;
@@ -181,19 +173,17 @@ list<uint64_t> Graph::shortest_path(uint64_t node_a_id,uint64_t node_b_id) {
         }
     }
     
-    list<uint64_t> result;
+    vector<uint64_t> result;
     stack<uint64_t> stack_temp;
     
     for (uint64_t start = position_b; start != position_a; start = edge_node[start]) {
         stack_temp.push(start);
     }
     while (stack_temp.size()) {
-        list<uint64_t>::iterator list = id_list.begin();
-        advance(list, stack_temp.top());
-        result.push_back(*list);
+        result.push_back(id_list[stack_temp.top()]);
         stack_temp.pop();
     }
-    
+    result.push_back(node_a_id);
     free(mark);
     free(edge_node);
     return result;
