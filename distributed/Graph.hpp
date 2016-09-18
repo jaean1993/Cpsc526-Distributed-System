@@ -21,9 +21,9 @@ class Graph
 private:
     int vertex;
     int edge;
-    static int size;
-    vector<uint64_t> id_list;
-    vector<vector<uint64_t>> graph;
+    vector<uint64_t> id_vec;
+    list < list<uint64_t> > graph;
+
 public:
     
     int add_node(uint64_t node_id);
@@ -32,9 +32,9 @@ public:
     int remove_edge(uint64_t node_a_id,uint64_t node_b_id);
     int get_node(uint64_t node_id);
     int get_edge(uint64_t node_a_id,uint64_t node_b_id);
-    vector<uint64_t> get_neighbors(uint64_t node_id);
-    vector<uint64_t> shortest_path(uint64_t node_a_id,uint64_t node_b_id);
-    void remove_single_edge(uint64_t node_a_id, uint64_t node_b_id);
+    list<uint64_t> get_neighbors(uint64_t node_id);
+    int shortest_path(uint64_t node_a_id,uint64_t node_b_id);
+
 };
 
 #endif /* Graph_hpp */
