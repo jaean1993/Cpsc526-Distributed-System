@@ -54,7 +54,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                 case 200: //Add the node successfully
                 {
                     string json_result = "{\r\nnode_id:"+std::to_string(node_id)+"\r\n}\r\n";
-                    mg_send_head(c, status_code, json_result.size(), "Content-Type:application/json");
+                    mg_send_head(c, status_code, json_result.size(), "Content-Type: application/json");
                     mg_printf(c, "%s", json_result.c_str());
                     break;
                 }
