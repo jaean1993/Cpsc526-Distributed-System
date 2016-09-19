@@ -12,7 +12,7 @@
 #include <iostream>
 #include <stdlib.h>
 using namespace std;
-static const char *s_http_port = "8000";
+
 static Graph graph;
 
 
@@ -210,10 +210,13 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
 }
 
 
-int main() {
+int main(int argc, char *argv[]) {
     struct mg_mgr mgr;
     struct mg_connection *c;
-    
+    char *s_http_port = "8000";
+    if(argc > 1) {
+        s_http_port =  argv[1];
+    }
     mg_mgr_init(&mgr, NULL);
     c = mg_bind(&mgr, s_http_port, ev_handler);
     mg_set_protocol_http_websocket(c);
