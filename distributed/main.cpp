@@ -166,14 +166,14 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                 
                 if (!neighbors.empty()) {
                     list<uint64_t>::iterator it = neighbors.begin();
-                    string json_result = "{\r\n[";
+                    string json_result = "\r\n{\n\"node_id\":" + std::to_string(node_id) + ",\n\"neighbors\":[";
                     json_result += std::to_string(*it);
                     for (it++; it != neighbors.end(); it++) {
                         json_result += ",";
                         json_result += std::to_string(*it);
                     }
-                    json_result += "]\r\n";
-                    mg_send_head(c, status_code, json_result.size(), "Content-Type:application/json");
+                    json_result += "]\r\n}\r\n";
+                    mg_send_head(c, status_code, json_result.size(), "Content-Type:plain/text");
                     mg_printf(c, "%s", json_result.c_str());
                 }else {
                     mg_send_head(c, 400, 0, NULL);
@@ -198,7 +198,8 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     break;
                 default:
                     status_code = 200;
-                    string json_result = "{\r\ndistance:"+std::to_string(dis)+"\r\n}\r\n";
+                    string json_result = "{\r\n\"distance\":"+std::to_string(dis)+"\r\n}\r\n";
+                    mg_send_head(c, status_code, json_result.size(), "Content-Type:application/json");
                     mg_printf(c, "%s", json_result.c_str());
                     break;
                     
@@ -209,7 +210,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
 }
 
 
-int main(void) {
+int main() {
     struct mg_mgr mgr;
     struct mg_connection *c;
     
