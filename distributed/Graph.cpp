@@ -26,9 +26,9 @@ int Graph::add_node(uint64_t node_id){
         list<uint64_t> a;
         graph.push_back(a);
         vertex++;
-        return 200;//success
+        return 1;//success
     } else{
-        return 204;//node already exists
+        return 0;//node already exists
     }
 }
 

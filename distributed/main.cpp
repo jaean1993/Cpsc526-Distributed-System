@@ -38,11 +38,11 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
         parse_json(hm -> body.p, (int)hm -> body.len, tokens, 100);
         
         int status_code = 200; //Default value
-        const char *status_message = "OK"; //Default value
         
         if (mg_vcmp(&hm -> method, "POST") != 0) {
-            mg_send(c, "\r\n", 2);
-            mg_printf(c, "Wrong command!\r\n");
+            string response = "Wrong command!\r\n";
+            mg_send_head(c, 400, response.size(), "Content-Type:plain/text");
+            mg_printf(c, response.c_str());
         }
         if (mg_vcmp(&hm -> uri, "/api/v1/add_node") == 0) {
             
@@ -74,30 +74,16 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             status_code = graph.add_edge(node_a_id, node_b_id);
             switch (status_code) {
                 case 200: //Add the edge successfully
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
-                    mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "{\r\n");
-                    mg_printf(c, " node_a_id: %llu\r\n", node_a_id);
-                    mg_printf(c, " node_b_id: %llu\r\n", node_b_id);
-                    mg_printf(c, "}\r\n");
+                    string json_result = "{\r\nnode_a_id:"+std::to_string(node_a_id)+"\r\nnode_b_id:"+std::to_string(node_b_id)+"\r\n}\r\n";
+                    mg_send_head(c, status_code, json_result.size(), "Content-Type:application/json");
+                    mg_printf(c, "%s", json_result.c_str());
+                    
                     break;
                 case 204: //The edge already exists
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
-                    mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
+                    mg_send_head(c, status_code, 0, NULL);
                     break;
                 case 400: //Either node doesn't exist, or if node_a_id is the same as node_b_id
-                    status_message = "Bad Request";
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
-                    mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "Either node doesn't exist, or if node_a_id is the same as node_b_id.\r\n");
+                    mg_send_head(c, status_code, 0, NULL);
                     break;
             }
         }
@@ -108,23 +94,10 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             status_code = graph.remove_node(node_id);
             switch (status_code) {
                 case 200: //Remove the node successfully
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
-                    mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "{\r\n");
-                    mg_printf(c, " node_id: %llu\r\n", node_id);
-                    mg_printf(c, "}\r\n");
+                    mg_send_head(c, status_code, 0, NULL);
                     break;
                 case 400: //The node does not exist
-                    status_message = "Bad Request";
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
-                    mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "The node does not exist.\r\n");
+                    mg_send_head(c, status_code, 0, NULL);
                     break;
             }
         }
@@ -136,24 +109,10 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             status_code = graph.remove_edge(node_a_id, node_b_id);
             switch (status_code) {
                 case 200: //Add the edge successfully
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
-                    mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "{\r\n");
-                    mg_printf(c, " node_a_id: %llu\r\n", node_a_id);
-                    mg_printf(c, " node_b_id: %llu\r\n", node_b_id);
-                    mg_printf(c, "}\r\n");
+                    mg_send_head(c, status_code, 0, NULL);
                     break;
                 case 400: //The edge does not exist
-                    status_message = "Bad Request";
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
-                    mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "The edge does not exist\r\n");
+                    mg_send_head(c, status_code, 0, NULL);
                     break;
             }
         }
@@ -163,14 +122,9 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             
             //Try to get the node
             int in_graph = graph.get_node(node_id);
-            mg_send(c, "\r\n", 2);
-            mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
-            mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-            mg_printf(c, "Content-Type: %s\r\n", "application/json");
-            mg_send(c, "\r\n", 2);
-            mg_printf(c, "{\r\n");
-            mg_printf(c, " in_graph: %d\r\n", in_graph);
-            mg_printf(c, "}\r\n");
+            string json_result = "{\r\nin_graph:"+std::to_string(in_graph)+"\r\n}\r\n";
+            mg_send_head(c, status_code, json_result.size(), "Content-Type:application/json");
+            mg_printf(c, "%s", json_result.c_str());
         }
         else if (mg_vcmp(&hm -> uri, "/api/v1/get_edge") == 0) {
             uint64_t node_a_id = get_node(tokens,"node_a_id");
