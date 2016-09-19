@@ -10,9 +10,23 @@
 #include "Graph.hpp"
 #include <string>
 #include <iostream>
-
+#include <stdlib.h>
+using namespace std;
 static const char *s_http_port = "8000";
 static Graph graph;
+
+
+static uint64_t get_node(struct json_token *tokens, string node_name) {
+    struct json_token *node;
+    //Find the json_token named node_id
+    node = find_json_token(tokens, node_name.c_str());
+    
+    char *temp = (char*)malloc(node -> len * sizeof(char));
+    strncpy(temp, node -> ptr, node -> len);
+    uint64_t node_id = atoi(temp);
+    free(temp);
+    return node_id;
+}
 
 static void ev_handler(struct mg_connection *c, int ev, void *p) {
     if ( ev == MG_EV_HTTP_REQUEST ) {
@@ -20,7 +34,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
         struct http_message *hm = (struct http_message*) p;
     
         //Parse http_message body with type json
-        struct json_token tokens[100];
+        struct json_token tokens[(int)hm -> body.len];
         parse_json(hm -> body.p, (int)hm -> body.len, tokens, 100);
         
         int status_code = 200; //Default value
@@ -30,53 +44,31 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             mg_send(c, "\r\n", 2);
             mg_printf(c, "Wrong command!\r\n");
         }
-        else if (mg_vcmp(&hm -> uri, "/api/v1/add_node") == 0) {
-            struct json_token *node;
-            //Find the json_token named node_id
-            node = find_json_token(tokens, "node_id");
-
-            //Exstract node_id
-            char *temp = (char*)malloc(node -> len * sizeof(char));
-            strncpy(temp, node -> ptr, node -> len);
-            uint64_t node_id = atoi(temp);
-            free(temp);
+        if (mg_vcmp(&hm -> uri, "/api/v1/add_node") == 0) {
+            
+            uint64_t node_id = get_node(tokens, "node_id");
             
             //Try to add a node
             status_code = graph.add_node(node_id);
             switch (status_code) {
                 case 200: //Add the node successfully
-                    //Print the output
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
-                    mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "{\r\n");
-                    mg_printf(c, " node_id: %llu\r\n", node_id);
-                    mg_printf(c, "}\r\n");
+                {
+                    string json_result = "{\r\nnode_id:"+std::to_string(node_id)+"\r\n}\r\n";
+                    mg_send_head(c, status_code, json_result.size(), "Content-Type:application/json");
+                    mg_printf(c, "%s", json_result.c_str());
                     break;
+                }
                 case 204: //The node already exists
-                    mg_send(c, "\r\n", 2);
-                    mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
-                    mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
-                    mg_send(c, "\r\n", 2);
+                {
+                    mg_send_head(c, status_code, 0, NULL);
                     break;
+                }
             }
         }
         else if (mg_vcmp(&hm -> uri, "/api/v1/add_edge") == 0) {
-            struct json_token *node_a, *node_b;
-            //Find the json_token named node_a_id
-            node_a = find_json_token(tokens, "node_a_id");
-            node_b = find_json_token(tokens, "node_b_id");
-            
             //Exstract node_a_id and node_b_id
-            char* temp = (char*)malloc(node_a -> len * sizeof(char));
-            strncpy(temp, node_a -> ptr, node_a -> len);
-            uint64_t node_a_id = atoi(temp);
-            strncpy(temp, node_b -> ptr, node_b -> len);
-            uint64_t node_b_id = atoi(temp);
-            free(temp);
+            uint64_t node_a_id = get_node(tokens,"node_a_id");
+            uint64_t node_b_id = get_node(tokens,"node_b_id");
             
             //Try to add an edge
             status_code = graph.add_edge(node_a_id, node_b_id);
@@ -85,7 +77,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "{\r\n");
                     mg_printf(c, " node_a_id: %llu\r\n", node_a_id);
@@ -96,29 +88,21 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     break;
                 case 400: //Either node doesn't exist, or if node_a_id is the same as node_b_id
                     status_message = "Bad Request";
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "Either node doesn't exist, or if node_a_id is the same as node_b_id.\r\n");
                     break;
             }
         }
         else if (mg_vcmp(&hm -> uri, "/api/v1/remove_node") == 0) {
-            struct json_token *node;
-            //Find the json_token named node_id
-            node = find_json_token(tokens, "node_id");
-            
-            //Exstract node_id
-            char *temp = (char*)malloc(node -> len * sizeof(char));
-            strncpy(temp, node -> ptr, node -> len);
-            uint64_t node_id = atoi(temp);
-            free(temp);
+            uint64_t node_id = get_node(tokens,"node_id");
             
             //Try to remove a node
             status_code = graph.remove_node(node_id);
@@ -127,7 +111,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "{\r\n");
                     mg_printf(c, " node_id: %llu\r\n", node_id);
@@ -138,25 +122,15 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "The node does not exist.\r\n");
                     break;
             }
         }
         else if (mg_vcmp(&hm -> uri, "/api/v1/remove_edge") == 0) {
-            struct json_token *node_a, *node_b;
-            //Find the json_token named node_a_id
-            node_a = find_json_token(tokens, "node_a_id");
-            node_b = find_json_token(tokens, "node_b_id");
-            
-            //Exstract node_a_id and node_b_id
-            char* temp = (char*)malloc(node_a -> len * sizeof(char));
-            strncpy(temp, node_a -> ptr, node_a -> len);
-            uint64_t node_a_id = atoi(temp);
-            strncpy(temp, node_b -> ptr, node_b -> len);
-            uint64_t node_b_id = atoi(temp);
-            free(temp);
+            uint64_t node_a_id = get_node(tokens,"node_a_id");
+            uint64_t node_b_id = get_node(tokens,"node_b_id");
             
             //Try to remove an edge
             status_code = graph.remove_edge(node_a_id, node_b_id);
@@ -165,7 +139,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "{\r\n");
                     mg_printf(c, " node_a_id: %llu\r\n", node_a_id);
@@ -177,47 +151,30 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "The edge does not exist\r\n");
                     break;
             }
         }
         else if (mg_vcmp(&hm -> uri, "/api/v1/get_node") == 0) {
-            struct json_token *node;
-            //Find the json_token named node_id
-            node = find_json_token(tokens, "node_id");
-            
-            //Exstract node_id
-            char *temp = (char*)malloc(node -> len * sizeof(char));
-            strncpy(temp, node -> ptr, node -> len);
-            uint64_t node_id = atoi(temp);
-            free(temp);
+
+            uint64_t node_id = get_node(tokens,"node_id");
             
             //Try to get the node
             int in_graph = graph.get_node(node_id);
             mg_send(c, "\r\n", 2);
             mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
             mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-            mg_printf(c, "Application-Type: %s\r\n", "application/json");
+            mg_printf(c, "Content-Type: %s\r\n", "application/json");
             mg_send(c, "\r\n", 2);
             mg_printf(c, "{\r\n");
             mg_printf(c, " in_graph: %d\r\n", in_graph);
             mg_printf(c, "}\r\n");
         }
         else if (mg_vcmp(&hm -> uri, "/api/v1/get_edge") == 0) {
-            struct json_token *node_a, *node_b;
-            //Find the json_token named node_a_id
-            node_a = find_json_token(tokens, "node_a_id");
-            node_b = find_json_token(tokens, "node_b_id");
-            
-            //Exstract node_a_id and node_b_id
-            char* temp = (char*)malloc(node_a -> len * sizeof(char));
-            strncpy(temp, node_a -> ptr, node_a -> len);
-            uint64_t node_a_id = atoi(temp);
-            strncpy(temp, node_b -> ptr, node_b -> len);
-            uint64_t node_b_id = atoi(temp);
-            free(temp);
+            uint64_t node_a_id = get_node(tokens,"node_a_id");
+            uint64_t node_b_id = get_node(tokens,"node_b_id");
             
             //Try to add an edge
             int myflag = graph.get_edge(node_a_id, node_b_id);
@@ -228,7 +185,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "{\r\n");
                     mg_printf(c, " in_graph: %d\r\n", myflag);
@@ -240,29 +197,24 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "Either node doesn't exist, or node_a_id is the same as node_b_id.\r\n");
                     break;
             }
         }
         else if (mg_vcmp(&hm -> uri, "/api/v1/get_neighbors") == 0) {
-            struct json_token *node;
-            //Find the json_token named node_id
-            node = find_json_token(tokens, "node_id");
+            
             
             //Exstract node_id
-            char *temp = (char*)malloc(node -> len * sizeof(char));
-            strncpy(temp, node -> ptr, node -> len);
-            uint64_t node_id = atoi(temp);
-            free(temp);
+            uint64_t node_id = get_node(tokens,"node_id");
             
             if(graph.get_node(node_id) == 0) { //If the node does not exist
                 status_code = 400;
                 mg_send(c, "\r\n", 2);
                 mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                 mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                mg_printf(c, "Content-Type: %s\r\n", "application/json");
                 mg_send(c, "\r\n", 2);
                 mg_printf(c, "{\r\n");
                 mg_printf(c, "The node does not exist.\r\n");
@@ -275,7 +227,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                 mg_send(c, "\r\n", 2);
                 mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                 mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                mg_printf(c, "Content-Type: %s\r\n", "application/json");
                 mg_send(c, "\r\n", 2);
                 mg_printf(c, "{\r\n");
                 mg_printf(c, " \"node_id\": %llu\r\n", node_id);
@@ -292,18 +244,8 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             }
         }
         else if (mg_vcmp(&hm -> uri, "/api/v1/shortest_path") == 0) {
-            struct json_token *node_a, *node_b;
-            //Find the json_token named node_a_id
-            node_a = find_json_token(tokens, "node_a_id");
-            node_b = find_json_token(tokens, "node_b_id");
-            
-            //Exstract node_a_id and node_b_id
-            char* temp = (char*)malloc(node_a -> len * sizeof(char));
-            strncpy(temp, node_a -> ptr, node_a -> len);
-            uint64_t node_a_id = atoi(temp);
-            strncpy(temp, node_b -> ptr, node_b -> len);
-            uint64_t node_b_id = atoi(temp);
-            free(temp);
+            uint64_t node_a_id = get_node(tokens,"node_a_id");
+            uint64_t node_b_id = get_node(tokens,"node_b_id");
             
             //Try to find the shortest path
             int dis = graph.shortest_path(node_a_id, node_b_id);
@@ -314,7 +256,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "{\r\n");
                     mg_printf(c, "Either node does not exist.\r\n");
@@ -325,7 +267,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "{\r\n");
                     mg_printf(c, "There is no path.\r\n");
@@ -336,7 +278,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "%.*s %d %s\r\n", hm -> proto.len, hm -> proto.p, status_code, status_message);
                     mg_printf(c,"Content-Length: %ld\r\n", hm -> message.len);
-                    mg_printf(c, "Application-Type: %s\r\n", "application/json");
+                    mg_printf(c, "Content-Type: %s\r\n", "application/json");
                     mg_send(c, "\r\n", 2);
                     mg_printf(c, "{\r\n");
                     mg_printf(c, "The shortest path is %d\r\n", dis);
@@ -348,6 +290,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
         }
     }
 }
+
 
 int main(void) {
     struct mg_mgr mgr;
