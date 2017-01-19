@@ -4666,9 +4666,6 @@ void mg_send_response_line(struct mg_connection *nc, int status_code,
                            const char *extra_headers) {
   const char *status_message = "OK";
   switch (status_code) {
-    case 204:
-          status_message = "No Content";
-          break;
     case 206:
       status_message = "Partial Content";
       break;
@@ -4677,9 +4674,6 @@ void mg_send_response_line(struct mg_connection *nc, int status_code,
       break;
     case 302:
       status_message = "Found";
-      break;
-    case 400:
-      status_message = "Bad Request";
       break;
     case 416:
       status_message = "Requested range not satisfiable";

@@ -10,6 +10,9 @@
 		511260711D80FC7400CC7C66 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 511260701D80FC7400CC7C66 /* main.cpp */; };
 		511260781D80FD2800CC7C66 /* mongoose.c in Sources */ = {isa = PBXBuildFile; fileRef = 511260771D80FD2800CC7C66 /* mongoose.c */; };
 		5112607C1D80FF6000CC7C66 /* Graph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5112607A1D80FF6000CC7C66 /* Graph.cpp */; };
+		51683BE31DEFD7A200837EB5 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 51683BDB1DEFD7A200837EB5 /* Makefile */; };
+		51683BE41DEFD7A200837EB5 /* rpc_client.cc in Sources */ = {isa = PBXBuildFile; fileRef = 51683BDD1DEFD7A200837EB5 /* rpc_client.cc */; };
+		51683BE51DEFD7A200837EB5 /* rpc_server.cc in Sources */ = {isa = PBXBuildFile; fileRef = 51683BDF1DEFD7A200837EB5 /* rpc_server.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -31,6 +34,14 @@
 		511260791D80FD3400CC7C66 /* mongoose.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mongoose.h; sourceTree = "<group>"; };
 		5112607A1D80FF6000CC7C66 /* Graph.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Graph.cpp; sourceTree = "<group>"; };
 		5112607B1D80FF6000CC7C66 /* Graph.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Graph.hpp; sourceTree = "<group>"; };
+		51683BDB1DEFD7A200837EB5 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		51683BDC1DEFD7A200837EB5 /* myapp */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = myapp; sourceTree = "<group>"; };
+		51683BDD1DEFD7A200837EB5 /* rpc_client.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = rpc_client.cc; sourceTree = "<group>"; };
+		51683BDE1DEFD7A200837EB5 /* rpc_client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_client.h; sourceTree = "<group>"; };
+		51683BDF1DEFD7A200837EB5 /* rpc_server.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = rpc_server.cc; sourceTree = "<group>"; };
+		51683BE01DEFD7A200837EB5 /* rpc_server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rpc_server.h; sourceTree = "<group>"; };
+		51683BE11DEFD7A200837EB5 /* rpc.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = rpc.proto; sourceTree = "<group>"; };
+		51683BE21DEFD7A200837EB5 /* server_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = server_config.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +74,14 @@
 		5112606F1D80FC7400CC7C66 /* distributed */ = {
 			isa = PBXGroup;
 			children = (
+				51683BDB1DEFD7A200837EB5 /* Makefile */,
+				51683BDC1DEFD7A200837EB5 /* myapp */,
+				51683BDD1DEFD7A200837EB5 /* rpc_client.cc */,
+				51683BDE1DEFD7A200837EB5 /* rpc_client.h */,
+				51683BDF1DEFD7A200837EB5 /* rpc_server.cc */,
+				51683BE01DEFD7A200837EB5 /* rpc_server.h */,
+				51683BE11DEFD7A200837EB5 /* rpc.proto */,
+				51683BE21DEFD7A200837EB5 /* server_config.h */,
 				511260791D80FD3400CC7C66 /* mongoose.h */,
 				511260771D80FD2800CC7C66 /* mongoose.c */,
 				511260701D80FC7400CC7C66 /* main.cpp */,
@@ -128,8 +147,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				51683BE51DEFD7A200837EB5 /* rpc_server.cc in Sources */,
 				511260781D80FD2800CC7C66 /* mongoose.c in Sources */,
 				5112607C1D80FF6000CC7C66 /* Graph.cpp in Sources */,
+				51683BE31DEFD7A200837EB5 /* Makefile in Sources */,
+				51683BE41DEFD7A200837EB5 /* rpc_client.cc in Sources */,
 				511260711D80FC7400CC7C66 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -221,8 +243,6 @@
 		511260751D80FC7400CC7C66 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				GCC_VERSION = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -230,8 +250,6 @@
 		511260761D80FC7400CC7C66 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				GCC_VERSION = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

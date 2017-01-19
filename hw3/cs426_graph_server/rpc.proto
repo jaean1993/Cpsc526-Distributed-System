@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package rpc;
+
+service Replication {
+  rpc RpcGraph (Request) returns (Reply) {}
+}
+
+message Request {
+  int32 action = 1;
+  uint64 node_one = 2;
+  uint64 node_two = 3;
+}
+
+message Reply {
+  string message = 1;
+}

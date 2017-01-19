@@ -5,16 +5,26 @@
 //  Created by 安槿 on 16/9/7.
 //  Copyright © 2016年 anjin. All rights reserved.
 //
-
-#include "mongoose.h"  // Include Mongoose API definitions
-#include "Graph.hpp"
 #include <string>
 #include <iostream>
 #include <stdlib.h>
+#include <pthread.h>
+#include <grpc++/grpc++.h>
+
+#include "mongoose.h"
+#include "Graph.hpp"
+#include "rpc_server.h"
+#include "rpc_server.h"
+#include "rpc_client.h"
+#include "helper.h"
+#include "rpc.grpc.pb.h"
+
 using namespace std;
+using grpc::Channel;
+using grpc::ClientContext;
+using grpc::Status;
 
-static Graph graph;
-
+RPCClient* Helper::rpcClient = NULL;
 
 static uint64_t get_node(struct json_token *tokens, string node_name) {
     struct json_token *node;
@@ -44,16 +54,17 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             mg_send_head(c, 400, response.size(), "Content-Type:plain/text");
             mg_printf(c, response.c_str());
         }
-        cout<<"dongzuo"<<endl;
-        cout<<hm -> uri.p<<endl;
-
         if (mg_vcmp(&hm -> uri, "/api/v1/add_node") == 0) {
             
             uint64_t node_id = get_node(tokens, "node_id");
-            cout<<"node_id"<<endl;
-            cout<<node_id<<endl;
+            
             //Try to add a node
-            status_code = graph.add_node(node_id);
+            status_code = Graph::add_node(node_id);
+            if (Helper::rpcClient != NULL && !Helper::rpcClient->RpcGraph(1, node_id, 0)) {
+                string response = "Replication error!\r\n";
+                mg_send_head(c, 500, response.size(), "Content-Type:plain/text");
+                mg_printf(c, response.c_str());
+            }
             switch (status_code) {
                 case 200: //Add the node successfully
                 {
@@ -70,13 +81,17 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             }
         }
         else if (mg_vcmp(&hm -> uri, "/api/v1/add_edge") == 0) {
-            
             //Exstract node_a_id and node_b_id
             uint64_t node_a_id = get_node(tokens,"node_a_id");
             uint64_t node_b_id = get_node(tokens,"node_b_id");
             
             //Try to add an edge
-            status_code = graph.add_edge(node_a_id, node_b_id);
+            status_code = Graph::add_edge(node_a_id, node_b_id);
+            if (Helper::rpcClient != NULL && !Helper::rpcClient->RpcGraph(2, node_a_id, node_b_id)) {
+                string response = "Replication error!\r\n";
+                mg_send_head(c, 500, response.size(), "Content-Type:plain/text");
+                mg_printf(c, response.c_str());
+            }
             switch (status_code) {
                 case 200: //Add the edge successfully
                 {
@@ -98,7 +113,12 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             uint64_t node_id = get_node(tokens,"node_id");
             
             //Try to remove a node
-            status_code = graph.remove_node(node_id);
+            status_code = Graph::remove_node(node_id);
+            if (Helper::rpcClient != NULL && !Helper::rpcClient->RpcGraph(3, node_id, 0)) {
+                string response = "Replication error!\r\n";
+                mg_send_head(c, 500, response.size(), "Content-Type:plain/text");
+                mg_printf(c, response.c_str());
+            }
             switch (status_code) {
                 case 200: //Remove the node successfully
                     mg_send_head(c, status_code, 0, NULL);
@@ -113,7 +133,12 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             uint64_t node_b_id = get_node(tokens,"node_b_id");
             
             //Try to remove an edge
-            status_code = graph.remove_edge(node_a_id, node_b_id);
+            status_code = Graph::remove_edge(node_a_id, node_b_id);
+            if (Helper::rpcClient != NULL && !Helper::rpcClient->RpcGraph(4, node_a_id, node_b_id)) {
+                string response = "Replication error!\r\n";
+                mg_send_head(c, 500, response.size(), "Content-Type:plain/text");
+                mg_printf(c, response.c_str());
+            }
             switch (status_code) {
                 case 200: //Add the edge successfully
                     mg_send_head(c, status_code, 0, NULL);
@@ -128,7 +153,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             uint64_t node_id = get_node(tokens,"node_id");
             
             //Try to get the node
-            int in_graph = graph.get_node(node_id);
+            int in_graph = Graph::get_node(node_id);
             string json_result = "{\r\nin_graph:"+std::to_string(in_graph)+"\r\n}\r\n";
             mg_send_head(c, status_code, json_result.size(), "Content-Type:application/json");
             mg_printf(c, "%s", json_result.c_str());
@@ -138,7 +163,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             uint64_t node_b_id = get_node(tokens,"node_b_id");
             
             //Try to add an edge
-            int myflag = graph.get_edge(node_a_id, node_b_id);
+            int myflag = Graph::get_edge(node_a_id, node_b_id);
             switch (myflag) {
                 case 0: //The edge does not exist
                     mg_send_head(c, 400, 0, NULL);
@@ -162,12 +187,12 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             //Exstract node_id
             uint64_t node_id = get_node(tokens,"node_id");
             
-            if(graph.get_node(node_id) == 0) { //If the node does not exist
+            if(Graph::get_node(node_id) == 0) { //If the node does not exist
                 mg_send_head(c, 400, 0, NULL);
             }
             else {
                 //Get the neighbors
-                list<uint64_t> neighbors = graph.get_neighbors(node_id);
+                list<uint64_t> neighbors = Graph::get_neighbors(node_id);
                 
                 if (!neighbors.empty()) {
                     list<uint64_t>::iterator it = neighbors.begin();
@@ -191,7 +216,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             uint64_t node_b_id = get_node(tokens,"node_b_id");
             
             //Try to find the shortest path
-            int dis = graph.shortest_path(node_a_id, node_b_id);
+            int dis = Graph::shortest_path(node_a_id, node_b_id);
             switch (dis) {
                 case -1:
                     status_code = 400;
@@ -211,48 +236,30 @@ static void ev_handler(struct mg_connection *c, int ev, void *p) {
             }
 
         }
-        else if (mg_vcmp(&hm -> uri, "/api/v1/checkpoint") == 0) {
-            int status_code = graph.check_point();
-            mg_send_head(c, status_code, 0, NULL);
-        }
     }
 }
 
-
 int main(int argc, char *argv[]) {
-    int opt =getopt(argc, argv, "f");
-    
     struct mg_mgr mgr;
     struct mg_connection *c;
+    pthread_t rpc_thread;
     char *s_http_port = "8000";
-    char *disk_path = "/dev/sdb";
     
-    if(argc > 1 && opt == -1) {
+    if (getopt(argc, argv, "b") != -1) {
+        s_http_port = argv[3];
+        string next_node = argv[2];
+        RPCClient* client = new RPCClient(grpc::CreateChannel(next_node + ":50051", grpc::InsecureChannelCredentials()));
+        Helper::rpcClient = client;
+    }
+    else {
         s_http_port =  argv[1];
-        if (argc > 2) {
-            disk_path = argv[2];
-        }
-    } else {
-        s_http_port = argv[2];
-        if (argc > 3) {
-            disk_path = argv[3];
-        }
     }
     
-    graph.disk_path = disk_path;
+    pthread_create(&rpc_thread, NULL, RPCServer::RunServer, (void *)NULL);
     
-    if (opt == 'f') {
-        graph.format();
-    }
     mg_mgr_init(&mgr, NULL);
     c = mg_bind(&mgr, s_http_port, ev_handler);
     mg_set_protocol_http_websocket(c);
-    
-     
-    if(graph.init() == 400 ) {
-        return -1;
-    }
-    
     
     for (;;) {
         mg_mgr_poll(&mgr, 1000);
